@@ -2,11 +2,6 @@ class SharedResource {
     private int data;
     private boolean hasData = false;
 
-    public class MyRunnable implements Runnable{
-        public void run(){
-            System.out.println("Thread" + Thread.currentThread().getName() + "is runnning");
-        }
-    }
 
     public synchronized void produce(int val){
         while(hasData){
@@ -19,10 +14,10 @@ class SharedResource {
         data = val;
         System.out.println("Produced: " + data);
         hasData = true;
-        notify();
+        notifyAll();
     }
 
-    public synchronized void consume(int val){
+    public synchronized void consume(){
         while(!hasData){
             try{
                 wait();
@@ -32,7 +27,7 @@ class SharedResource {
         }
         System.out.println("Consumed: " + data);
         hasData = false;
-        notify();
+        notifyAll();
     }
 
 }
@@ -44,20 +39,39 @@ public class ThreadInterCommunication{
         Thread producer = new Thread(() -> {
             for (int i = 0; i < 15; i++) {
                 resource.produce(i);
-                try { Thread.sleep(500); } catch (InterruptedException e) {};
+                try { 
+                    Thread.sleep(300); 
+                } catch (InterruptedException e) {
+                    System.out.println(e.getMessage());
+                    break;
+                }
             }
         });
 
         Thread consumer = new Thread(() -> {
             for (int i = 0; i < 15; i++) {
-                resource.consume(i);
-                try { Thread.sleep(500); } catch (InterruptedException e) {};
+                resource.consume();
+                try { 
+                    Thread.sleep(500); 
+                } catch (InterruptedException e) {
+                    System.out.println(e.getMessage());
+                    break;
+                }
             }
         });
         
 
         producer.start();
         consumer.start();
+
+        try {
+            producer.join();
+            consumer.join();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        System.out.println("Program finished");
     }
 
 }
